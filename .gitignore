@@ -1,0 +1,70 @@
+### Java / Maven / Spring Boot ###
+target/
+build/
+
+*.class
+*.log
+
+# Package artifacts (if generated locally)
+*.jar
+*.war
+*.ear
+
+# Maven release/plugin generated files
+dependency-reduced-pom.xml
+release.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+
+### JVM ###
+hs_err_pid*
+replay_pid*
+
+### Environment / secrets ###
+.env
+.env.*
+!.env.example
+
+### IDEs ###
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse / STS
+.classpath
+.project
+.settings/
+.apt_generated/
+.factorypath
+.springBeans
+.sts4-cache/
+
+# VS Code
+.vscode/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+### OS / editor temp ###
+.DS_Store
+Thumbs.db
+ehthumbs.db
+*.swp
+*.swo
+*~
+*.tmp
+
+### Local SQL client artifacts ###
+*.session.sql
+
+### Keep Maven wrapper tracked ###
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
