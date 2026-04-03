@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Manage Users')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div class="dashboard-layout">
+  <aside class="sidebar admin-sidebar">
+    <div class="sidebar-brand"><div class="shop-name">HotBake Admin</div><div class="role-tag">Administrator</div></div>
+    <p class="sidebar-nav-label">Management</p>
+    <a th:href="@{/admin/dashboard}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+    <a th:href="@{/admin/sellers}" class="sidebar-link"><i class="fa-solid fa-store"></i> Sellers</a>
+    <a th:href="@{/admin/users}" class="sidebar-link active"><i class="fa-solid fa-users"></i> Users</a>
+    <a th:href="@{/admin/products}" class="sidebar-link"><i class="fa-solid fa-cake-candles"></i> Products</a>
+    <a th:href="@{/admin/reviews}" class="sidebar-link"><i class="fa-solid fa-star"></i> Reviews</a>
+    <p class="sidebar-nav-label">System</p>
+    <a th:href="@{/}" class="sidebar-link"><i class="fa-solid fa-globe"></i> Visit Store</a>
+    <form th:action="@{/auth/logout}" method="post" style="margin:0">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="sidebar-link" style="width:100%;border:none;background:none;cursor:pointer;text-align:left">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </form>
+  </aside>
+  <main class="dash-main">
+    <div class="dash-header"><h1>User Management</h1><p>View, ban, or unban platform users</p></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>User</th><th>Phone</th><th>Roles</th><th>Status</th><th>Joined</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="user : ${users}">
+              <td>
+                <div class="seller-info-row">
+                  <strong th:text="${user.fullName}"></strong>
+                  <small th:text="${user.email}"></small>
+                </div>
+              </td>
+              <td th:text="${user.phone != null ? user.phone : '—'}"></td>
+              <td>
+                <div style="display:flex;gap:0.3rem;flex-wrap:wrap">
+                  <span th:each="role : ${user.roles}" class="badge"
+                        th:classappend="${role.name == 'ROLE_ADMIN'} ? 'badge-admin' :
+                                       (${role.name == 'ROLE_SELLER'} ? 'badge-seller' : 'badge-buyer')"
+                        th:text="${role.name.replace('ROLE_','')}"></span>
+                </div>
+              </td>
+              <td>
+                <span th:if="${user.banned}" class="badge badge-cancelled">Banned</span>
+                <span th:unless="${user.banned}" class="badge badge-delivered">Active</span>
+              </td>
+              <td th:text="${#temporals.format(user.createdAt,'dd MMM yyyy')}"></td>
+              <td>
+                <div class="action-group">
+                  <form th:action="@{/admin/users/{id}/ban(id=${user.id})}" method="post"
+                        th:if="${!user.banned and !user.hasRole('ROLE_ADMIN')}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-danger btn-sm"
+                            onclick="return confirm('Ban this user?')">
+                      <i class="fa-solid fa-ban"></i> Ban
+                    </button>
+                  </form>
+                  <form th:action="@{/admin/users/{id}/unban(id=${user.id})}" method="post" th:if="${user.banned}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-success btn-sm">
+                      <i class="fa-solid fa-circle-check"></i> Unban
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

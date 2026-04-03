@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Order Placed!')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main>
+<div class="container" style="padding:3rem 0;max-width:600px;text-align:center">
+  <div style="width:90px;height:90px;background:var(--green-100);border-radius:50%;display:grid;place-items:center;margin:0 auto 1.5rem;font-size:2.5rem;color:var(--green-500)">
+    <i class="fa-solid fa-circle-check"></i>
+  </div>
+  <h1 style="font-family:var(--font-display);font-size:2rem;margin-bottom:0.5rem">Order Placed!</h1>
+  <p class="text-muted" style="font-size:1rem;margin-bottom:2rem">
+    Thank you! Your cake is now on its way to being baked with love. 🎂
+  </p>
+
+  <div class="card" style="text-align:left;margin-bottom:2rem">
+    <div class="card-header">
+      <div style="display:flex;justify-content:space-between">
+        <span style="font-weight:700">Order #<span th:text="${order.id}"></span></span>
+        <span class="badge badge-pending" th:text="${order.status.displayName}"></span>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div th:each="item : ${order.items}" style="display:flex;justify-content:space-between;align-items:center;padding:0.9rem 1.25rem;border-bottom:1px solid var(--color-border)">
+        <div>
+          <p style="font-weight:600;margin:0;font-size:0.9rem" th:text="${item.product.name}"></p>
+          <p style="color:var(--color-muted);font-size:0.8rem;margin:0" th:text="${item.pounds} + ' lbs'"></p>
+        </div>
+        <span style="font-weight:700;color:var(--color-primary)">
+          ৳ <span th:text="${#numbers.formatDecimal(item.subtotal,0,'COMMA',2,'POINT')}"></span>
+        </span>
+      </div>
+    </div>
+    <div class="card-footer" style="display:flex;justify-content:space-between">
+      <div>
+        <p style="font-size:0.82rem;color:var(--color-muted);margin:0">Delivery to</p>
+        <p style="font-size:0.88rem;font-weight:600;margin:0" th:text="${order.deliveryAddress}"></p>
+      </div>
+      <div style="text-align:right">
+        <p style="font-size:0.82rem;color:var(--color-muted);margin:0">Total</p>
+        <p style="font-size:1.1rem;font-weight:800;color:var(--color-primary);margin:0">
+          ৳ <span th:text="${#numbers.formatDecimal(order.totalAmount,0,'COMMA',2,'POINT')}"></span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--green-100);border-radius:var(--radius-md);padding:1rem;margin-bottom:2rem;font-size:0.88rem;color:var(--green-700)">
+    <i class="fa-solid fa-money-bill-wave"></i>
+    <strong>Payment:</strong> Cash on Delivery — pay when your order arrives.
+  </div>
+
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+    <a th:href="@{/buyer/orders}" class="btn btn-primary">Track My Order</a>
+    <a th:href="@{/products}" class="btn btn-outline">Continue Shopping</a>
+  </div>
+</div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

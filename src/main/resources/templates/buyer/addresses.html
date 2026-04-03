@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Addresses')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main>
+<div class="container" style="padding:2rem 0;max-width:680px">
+  <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:1.5rem">
+    <i class="fa-solid fa-location-dot" style="color:var(--color-primary)"></i> Saved Addresses
+  </h1>
+  <div th:replace="~{fragments/layout :: flash}"></div>
+
+  <div th:each="addr : ${addresses}" class="card mb-2">
+    <div class="card-body" style="display:flex;align-items:flex-start;gap:1rem">
+      <i class="fa-solid fa-house" style="color:var(--color-primary);margin-top:3px"></i>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem">
+          <strong th:text="${addr.recipientName}"></strong>
+          <span th:if="${addr.isDefault()}" class="badge badge-approved">Default</span>
+        </div>
+        <p style="font-size:0.88rem;color:var(--neutral-600);margin:0" th:text="${addr.fullAddress}"></p>
+        <p style="font-size:0.82rem;color:var(--color-muted);margin:0" th:text="${addr.phone}"></p>
+      </div>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+        <form th:action="@{/buyer/addresses/set-default/{id}(id=${addr.id})}" method="post" th:if="${!addr.isDefault()}">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit" class="btn btn-secondary btn-sm">Set Default</button>
+        </form>
+        <form th:action="@{/buyer/addresses/delete/{id}(id=${addr.id})}" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remove this address?')">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add new address -->
+  <div class="card mt-3">
+    <div class="card-header"><h3 style="font-size:1rem"><i class="fa-solid fa-plus"></i> Add New Address</h3></div>
+    <div class="card-body">
+      <form th:action="@{/buyer/addresses/add}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <div class="form-group">
+          <label class="form-label">Recipient Name</label>
+          <input type="text" name="recipientName" class="form-control" placeholder="Full name" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address Line</label>
+          <input type="text" name="addressLine" class="form-control" placeholder="House, Road, Area" required/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-group">
+            <label class="form-label">City</label>
+            <input type="text" name="city" class="form-control" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">District</label>
+            <input type="text" name="district" class="form-control"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input type="tel" name="phone" class="form-control" placeholder="01XXXXXXXXX" required/>
+        </div>
+        <div class="form-check form-group">
+          <input type="checkbox" name="makeDefault" id="makeDefault" value="true"/>
+          <label for="makeDefault" class="form-label" style="margin:0">Set as default address</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Address</button>
+      </form>
+    </div>
+  </div>
+</div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

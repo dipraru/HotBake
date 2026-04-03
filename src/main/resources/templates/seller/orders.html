@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Seller Orders')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="shop-name">Seller Panel</div><div class="role-tag">Orders</div></div>
+    <a th:href="@{/seller/dashboard}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+    <a th:href="@{/seller/products}" class="sidebar-link"><i class="fa-solid fa-cake-candles"></i> My Products</a>
+    <a th:href="@{/seller/products/add}" class="sidebar-link"><i class="fa-solid fa-plus"></i> Add Product</a>
+    <a th:href="@{/seller/orders}" class="sidebar-link active"><i class="fa-solid fa-box"></i> Orders</a>
+    <a th:href="@{/}" class="sidebar-link"><i class="fa-solid fa-store"></i> Visit Store</a>
+  </aside>
+  <main class="dash-main">
+    <div class="dash-header d-flex justify-between align-center flex-wrap" style="gap:1rem">
+      <div><h1>Orders</h1><p>Manage and update your customer orders</p></div>
+      <!-- Status filter -->
+      <form th:action="@{/seller/orders}" method="get" style="display:flex;gap:0.5rem;align-items:center">
+        <select name="status" class="form-control" style="width:auto" onchange="this.form.submit()">
+          <option value="">All Statuses</option>
+          <option th:each="s : ${orderStatuses}" th:value="${s.name()}"
+                  th:selected="${selectedStatus == s.name()}" th:text="${s.displayName}"></option>
+        </select>
+      </form>
+    </div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <div th:if="${!orders.isEmpty()}" style="display:grid;gap:1.5rem">
+      <div th:each="order : ${orders}" style="background:hsl(0,0%,100%);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:all 0.3s ease">
+        <!-- Order Header -->
+        <div style="background:linear-gradient(90deg, var(--color-primary-light) 0%, var(--blue-50) 100%);padding:1.25rem;border-bottom:2px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+          <div>
+            <div style="font-weight:700;font-size:1.05rem">Order #<span th:text="${order.id}"></span></div>
+            <div class="text-muted" style="font-size:0.82rem;margin-top:0.25rem" th:text="${#temporals.format(order.createdAt,'dd MMM yyyy, hh:mm a')}"></div>
+          </div>
+          <span class="badge" style="font-size:0.82rem;padding:0.4rem 0.8rem;border-radius:var(--radius-sm)"
+                th:classappend="${order.status.name() == 'PENDING'} ? 'badge-pending' :
+                               (${order.status.name() == 'CONFIRMED'} ? 'badge-confirmed' :
+                               (${order.status.name() == 'PROCESSING'} ? 'badge-processing' :
+                               (${order.status.name() == 'SHIPPED'} ? 'badge-shipped' :
+                               (${order.status.name() == 'DELIVERED'} ? 'badge-delivered' : 'badge-cancelled'))))"
+                th:text="${order.status.displayName}"></span>
+        </div>
+
+        <!-- Customer Info -->
+        <div style="padding:1.25rem;border-bottom:1px solid var(--color-border);background:var(--neutral-50)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:0.85rem">
+            <div>
+              <div style="color:var(--color-muted);font-size:0.8rem;margin-bottom:0.2rem">Customer</div>
+              <div style="font-weight:600" th:text="${order.buyer.fullName}"></div>
+            </div>
+            <div>
+              <div style="color:var(--color-muted);font-size:0.8rem;margin-bottom:0.2rem">Contact</div>
+              <div style="font-weight:600" th:text="${order.deliveryPhone}"></div>
+            </div>
+            <div style="grid-column:1/-1">
+              <div style="color:var(--color-muted);font-size:0.8rem;margin-bottom:0.2rem">Delivery Address</div>
+              <div style="font-weight:600" th:text="${order.deliveryAddress}"></div>
+            </div>
+            <div style="grid-column:1/-1" th:if="${order.deliveryNote != null and !order.deliveryNote.isEmpty()}">
+              <div style="color:var(--color-muted);font-size:0.8rem;margin-bottom:0.2rem">Delivery Note</div>
+              <div style="font-weight:600;color:var(--amber-700);background:var(--amber-50);padding:0.5rem;border-radius:var(--radius-sm)" th:text="${order.deliveryNote}"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Items -->
+        <div style="padding:1.25rem;border-bottom:1px solid var(--color-border)">
+          <div th:each="item : ${order.items}" style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px dashed var(--color-border)">
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:0.9rem" th:text="${item.product.name}"></div>
+              <div style="color:var(--color-muted);font-size:0.8rem;margin-top:0.2rem" th:text="${item.pounds} + ' lbs @ ৳' + ${#numbers.formatDecimal(item.pricePerPound,0,'COMMA',2,'POINT')} + '/lb'"></div>
+            </div>
+            <span style="font-weight:700;color:var(--color-primary);white-space:nowrap">৳ <span th:text="${#numbers.formatDecimal(item.subtotal,0,'COMMA',2,'POINT')}"></span></span>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:1rem;padding-top:0.75rem;border-top:2px solid var(--color-border);font-size:1.05rem;font-weight:800;color:var(--color-primary)">
+            Total: ৳ <span th:text="${#numbers.formatDecimal(order.totalAmount,0,'COMMA',2,'POINT')}"></span>
+          </div>
+        </div>
+
+        <!-- Cancellation Reason (if cancelled) -->
+        <div th:if="${order.status.name() == 'CANCELLED' and order.cancellationReason != null and !order.cancellationReason.isBlank()}"
+             style="padding:1.25rem;border-bottom:1px solid var(--color-border);background:var(--red-50)">
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <i class="fa-solid fa-circle-info" style="color:var(--red-600);margin-top:0.2rem"></i>
+            <div>
+              <div style="font-weight:600;color:var(--red-900)">Cancellation Reason</div>
+              <div style="color:var(--red-700);font-size:0.85rem;margin-top:0.25rem" th:text="${order.cancellationReason}"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="padding:1.25rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;justify-content:flex-start;background:linear-gradient(90deg, rgba(59,130,246,0.02) 0%, transparent 100%);border-top:2px solid var(--color-border)"
+             th:if="${order.status.name() != 'DELIVERED' and order.status.name() != 'CANCELLED'}">
+          <button type="button" class="btn btn-primary btn-sm"
+                  th:if="${order.nextStatusForSeller != null}"
+                  th:attr="data-order-id=${order.id},data-status=${order.nextStatusForSeller.name()},data-label=${order.nextStatusForSeller.displayName}"
+                  onclick="openStatusModal(this)"
+                  style="background:var(--color-primary) !important;color:hsl(0,0%,100%);border:none;font-weight:600;padding:0.5rem 1rem;border-radius:var(--radius-sm);display:flex !important;align-items:center;gap:0.5rem;transition:all 0.2s;cursor:pointer;min-width:140px;justify-content:center;visibility:visible !important">
+            <i class="fa-solid fa-check-circle"></i>
+            <span th:text="'Mark as ' + ${order.nextStatusForSeller.displayName}"></span>
+          </button>
+
+          <button type="button" class="btn btn-outline btn-sm"
+                  style="color:hsl(0,0%,100%);border:2px solid var(--red-500);background:var(--red-500);font-weight:600;padding:0.48rem 1rem;border-radius:var(--radius-sm);display:flex;align-items:center;gap:0.5rem;transition:all 0.2s;cursor:pointer;min-width:100px;justify-content:center"
+                  th:if="${order.canSellerCancel()}"
+                  th:attr="data-order-id=${order.id}"
+                  onclick="openCancelModal(this)">
+            <i class="fa-solid fa-ban"></i> Cancel Order
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" th:if="${orders.isEmpty()}">
+      <div class="empty-icon"><i class="fa-solid fa-box-open"></i></div>
+      <h3>No orders found</h3>
+      <p>Orders for your products will appear here.</p>
+    </div>
+
+    <div id="statusConfirmModal" style="display:none;position:fixed;inset:0;background:hsl(222 47% 11% / 0.45);z-index:1200;place-items:center;padding:1rem">
+      <div class="card" style="max-width:420px;width:100%;padding:1.1rem">
+        <h3 style="margin-bottom:0.5rem">Confirm status update</h3>
+        <p class="text-muted" style="margin-bottom:1rem">This will update order <strong id="statusOrderIdText"></strong> to <strong id="statusLabelText"></strong>.</p>
+        <form id="statusConfirmForm" method="post" style="display:flex;gap:0.6rem;justify-content:flex-end">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <input type="hidden" name="status" id="statusConfirmField"/>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeStatusModal()">No</button>
+          <button type="submit" class="btn btn-primary btn-sm">Yes, Update</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="cancelOrderModal" style="display:none;position:fixed;inset:0;background:hsl(222 47% 11% / 0.45);z-index:1200;place-items:center;padding:1rem">
+      <div class="card" style="max-width:460px;width:100%;padding:1.1rem">
+        <h3 style="margin-bottom:0.5rem;color:var(--red-500)">Cancel order</h3>
+        <p class="text-muted" style="margin-bottom:0.9rem">Please provide a short reason (max 50 characters).</p>
+        <form id="cancelOrderForm" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <input type="hidden" name="status" value="CANCELLED"/>
+          <textarea id="cancelReason" name="cancellationReason" maxlength="50" required class="form-control" rows="3"
+                    placeholder="Reason for cancellation"></textarea>
+          <div style="font-size:0.78rem;color:var(--color-muted);margin-top:0.25rem;text-align:right">
+            <span id="reasonCounter">0</span>/50
+          </div>
+          <div style="display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.9rem">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeCancelModal()">No</button>
+            <button type="submit" class="btn btn-danger btn-sm">Yes, Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+  function openStatusModal(btn) {
+    const orderId = btn.getAttribute('data-order-id');
+    const status = btn.getAttribute('data-status');
+    const label = btn.getAttribute('data-label');
+    const form = document.getElementById('statusConfirmForm');
+    form.action = '/seller/orders/' + orderId + '/status';
+    document.getElementById('statusConfirmField').value = status;
+    document.getElementById('statusOrderIdText').textContent = '#' + orderId;
+    document.getElementById('statusLabelText').textContent = label;
+    document.getElementById('statusConfirmModal').style.display = 'grid';
+  }
+
+  function closeStatusModal() {
+    document.getElementById('statusConfirmModal').style.display = 'none';
+  }
+
+  function openCancelModal(btn) {
+    const orderId = btn.getAttribute('data-order-id');
+    const form = document.getElementById('cancelOrderForm');
+    form.action = '/seller/orders/' + orderId + '/status';
+    document.getElementById('cancelReason').value = '';
+    document.getElementById('reasonCounter').textContent = '0';
+    document.getElementById('cancelOrderModal').style.display = 'grid';
+  }
+
+  function closeCancelModal() {
+    document.getElementById('cancelOrderModal').style.display = 'none';
+  }
+
+  const cancelReason = document.getElementById('cancelReason');
+  if (cancelReason) {
+    cancelReason.addEventListener('input', function () {
+      document.getElementById('reasonCounter').textContent = String(this.value.length);
+    });
+  }
+</script>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

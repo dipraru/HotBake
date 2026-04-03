@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Shopping Cart')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main>
+<div class="container" style="padding:2rem 0;max-width:900px">
+  <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:1.5rem">
+    <i class="fa-solid fa-cart-shopping" style="color:var(--color-primary)"></i> Shopping Cart
+    <span class="text-muted" style="font-size:1rem;font-weight:400" th:text="'(' + ${cart.size()} + ' items)'"></span>
+  </h1>
+  <div th:replace="~{fragments/layout :: flash}"></div>
+
+  <div th:if="${!cart.isEmpty()}">
+    <div class="card mb-3">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th><th>Price/lb</th><th>Pounds</th><th>Subtotal</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="entry : ${cart}">
+              <td>
+                <div style="display:flex;align-items:center;gap:0.75rem">
+                  <img th:if="${entry.value.primaryImageId != null}"
+                       th:src="@{/images/{id}(id=${entry.value.primaryImageId})}"
+                       alt="Product" class="cart-img"/>
+                  <div th:if="${entry.value.primaryImageId == null}" class="cart-img"
+                       style="background:var(--rose-100);display:grid;place-items:center;color:var(--rose-400)">
+                    <i class="fa-solid fa-cake-candles"></i>
+                  </div>
+                  <div class="cart-product-info">
+                    <strong th:text="${entry.value.productName}"></strong>
+                    <small th:text="${entry.value.shopName}"></small>
+                  </div>
+                </div>
+              </td>
+              <td style="font-weight:600">৳ <span th:text="${#numbers.formatDecimal(entry.value.pricePerUnit,0,'COMMA',2,'POINT')}"></span></td>
+              <td>
+                <form th:action="@{/cart/increment}" method="post" class="qty-control">
+                  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                  <input type="hidden" name="cartItemId" th:value="${entry.key}"/>
+                  <button type="button" class="btn btn-outline-secondary" onclick="updateCartQty(this, 'decrement')">−</button>
+                  <input type="text"
+                         class="form-control text-center mx-1 qty-input"
+                         style="width: 70px; font-weight: bold; pointer-events: none; user-select: none;"
+                         th:value="${entry.value.quantity}"
+                         th:title="${entry.value.quantityLabel}"
+                         readonly tabindex="-1">
+                  <button type="button" class="btn btn-outline-secondary" onclick="updateCartQty(this, 'increment')">+</button>
+                </form>
+                <small style="display:block;text-align:center;margin-top:0.25rem;color:var(--color-muted)" th:text="${entry.value.quantityLabel}"></small>
+              </td>
+              <td style="font-weight:800;color:var(--color-primary)">
+                ৳ <span th:text="${#numbers.formatDecimal(entry.value.subtotal,0,'COMMA',2,'POINT')}"></span>
+              </td>
+              <td>
+                <form th:action="@{/cart/remove/{id}(id=${entry.key})}" method="post">
+                  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                  <button type="submit" class="btn btn-danger btn-sm">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+      <form th:action="@{/cart/clear}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button type="submit" class="btn btn-secondary">
+          <i class="fa-solid fa-trash-can"></i> Clear Cart
+        </button>
+      </form>
+      <div style="text-align:right">
+        <div style="font-size:0.9rem;color:var(--color-muted);margin-bottom:0.25rem">Order Total</div>
+        <div style="font-size:1.75rem;font-weight:800;color:var(--color-primary)">
+          ৳ <span th:text="${#numbers.formatDecimal(cartTotal,0,'COMMA',2,'POINT')}"></span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--green-700);margin-bottom:0.75rem">
+          <i class="fa-solid fa-money-bill-wave"></i> Cash on Delivery
+        </div>
+        <a th:href="@{/checkout}" class="btn btn-primary btn-lg">
+          Proceed to Checkout <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty cart -->
+  <div class="empty-state" th:if="${cart.isEmpty()}">
+    <div class="empty-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+    <h3>Your cart is empty</h3>
+    <p>Browse our delicious cakes and add some to your cart!</p>
+    <a th:href="@{/products}" class="btn btn-primary">Browse Cakes</a>
+  </div>
+</div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script>
+    async function updateCartQty(btn, action) {
+        const form = btn.closest('form');
+        const cartItemId = form.querySelector('input[name="cartItemId"]').value;
+        const csrfInput = form.querySelector('input[name="_csrf"]');
+        const csrfToken = csrfInput ? csrfInput.value : '';
+
+        const fd = new FormData();
+        fd.append('cartItemId', cartItemId);
+        if (csrfInput) {
+            fd.append('_csrf', csrfToken);
+        }
+
+        try {
+            const endpoint = action === 'increment' ? '/cart/ajax/increment' : '/cart/ajax/decrement';
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                body: fd
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // Update quantity input
+                    const inputElement = form.querySelector('.qty-input');
+                    if (inputElement) {
+                        inputElement.value = data.pounds;
+                    }
+                    
+                    // Update subtotal in the same row (4th column)
+                    const row = form.closest('tr');
+                    if (row) {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 4) {
+                            const subtotalCell = cells[3]; // 0-indexed, 4th column
+                            const subtotalSpan = subtotalCell.querySelector('span');
+                            if (subtotalSpan) {
+                                subtotalSpan.textContent = data.subtotalFormatted;
+                            }
+                        }
+                    }
+                    
+                    // Update cart total - find the summary section at bottom
+                    const summaryDiv = document.querySelector('div[style*="text-align:right"]');
+                    if (summaryDiv) {
+                        const totalSpan = summaryDiv.querySelector('div[style*="font-size:1.75rem"] span');
+                        if (totalSpan) {
+                            totalSpan.textContent = data.cartTotalFormatted;
+                        }
+                    }
+                } else {
+                    console.error('Update failed:', data.error);
+                }
+            } else {
+                console.error('Update HTTP error:', response.status);
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+        }
+    }
+</script>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Access Denied')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div style="min-height:60vh;display:grid;place-items:center;padding:3rem 1rem">
+  <div style="text-align:center;max-width:480px">
+    <div style="font-size:6rem;font-weight:900;color:var(--neutral-200);line-height:1;margin-bottom:1rem">403</div>
+    <h1 style="font-size:1.5rem;margin-bottom:0.75rem">Access Denied</h1>
+    <p style="color:var(--color-muted);margin-bottom:2rem">You don't have permission to view this page. Please make sure you're logged in with the correct account.</p>
+    <div style="display:flex;gap:1rem;justify-content:center">
+      <a th:href="@{/}" class="btn btn-primary">Go Home</a>
+      <a th:href="@{/auth/login}" class="btn btn-outline">Login</a>
+    </div>
+  </div>
+</div>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

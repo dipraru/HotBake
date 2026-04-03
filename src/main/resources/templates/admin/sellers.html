@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Manage Sellers')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div class="dashboard-layout">
+  <aside class="sidebar admin-sidebar">
+    <div class="sidebar-brand"><div class="shop-name">HotBake Admin</div><div class="role-tag">Administrator</div></div>
+    <p class="sidebar-nav-label">Management</p>
+    <a th:href="@{/admin/dashboard}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+    <a th:href="@{/admin/sellers}" class="sidebar-link active"><i class="fa-solid fa-store"></i> Sellers</a>
+    <a th:href="@{/admin/users}" class="sidebar-link"><i class="fa-solid fa-users"></i> Users</a>
+    <a th:href="@{/admin/products}" class="sidebar-link"><i class="fa-solid fa-cake-candles"></i> Products</a>
+    <a th:href="@{/admin/reviews}" class="sidebar-link"><i class="fa-solid fa-star"></i> Reviews</a>
+    <p class="sidebar-nav-label">System</p>
+    <a th:href="@{/}" class="sidebar-link"><i class="fa-solid fa-globe"></i> Visit Store</a>
+    <form th:action="@{/auth/logout}" method="post" style="margin:0">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="sidebar-link" style="width:100%;border:none;background:none;cursor:pointer;text-align:left">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </form>
+  </aside>
+  <main class="dash-main">
+    <div class="dash-header"><h1>Seller Applications</h1><p>Review and approve seller registrations</p></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Seller</th><th>Shop Name</th><th>Business Phone</th><th>NID</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr th:each="seller : ${sellers}">
+              <td>
+                <div class="seller-info-row">
+                  <strong th:text="${seller.user.fullName}"></strong>
+                  <small th:text="${seller.user.email}"></small>
+                </div>
+              </td>
+              <td>
+                <div class="seller-info-row">
+                  <strong th:text="${seller.shopName}"></strong>
+                  <small th:if="${seller.shopAddress != null}" th:text="${seller.shopAddress}"></small>
+                </div>
+              </td>
+              <td th:text="${seller.businessPhone}"></td>
+              <td style="font-family:monospace;font-size:0.82rem" th:text="${seller.nidNumber}"></td>
+              <td>
+                <span class="badge"
+                      th:classappend="${seller.status.name() == 'PENDING'} ? 'badge-pending' :
+                                     (${seller.status.name() == 'APPROVED'} ? 'badge-approved' : 'badge-rejected')"
+                      th:text="${seller.status.displayName}"></span>
+              </td>
+              <td th:text="${#temporals.format(seller.createdAt,'dd MMM yyyy')}"></td>
+              <td>
+                <div class="action-group" th:if="${seller.status.name() == 'PENDING'}">
+                  <form th:action="@{/admin/sellers/{id}/approve(id=${seller.id})}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-success btn-sm">
+                      <i class="fa-solid fa-check"></i> Approve
+                    </button>
+                  </form>
+                  <button class="btn btn-danger btn-sm reject-btn" th:data-seller-id="${seller.id}">
+                    <i class="fa-solid fa-xmark"></i> Reject
+                  </button>
+                </div>
+                <span th:if="${seller.status.name() == 'APPROVED'}" class="text-muted fs-sm">Active</span>
+                <div th:if="${seller.status.name() == 'REJECTED'}" style="font-size:0.78rem;color:var(--red-500)" th:text="${seller.rejectionReason}"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" th:if="${sellers.isEmpty()}"><p>No seller applications yet.</p></div>
+    </div>
+  </main>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" style="display:none;position:fixed;inset:0;background:hsl(0,0%,0%,0.5);z-index:9999;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:var(--color-surface);border-radius:var(--radius-lg);padding:2rem;width:100%;max-width:460px;box-shadow:var(--shadow-xl)">
+    <h3 style="margin-bottom:1rem">Reject Application</h3>
+    <form id="rejectForm" method="post">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <div class="form-group">
+        <label class="form-label">Reason for Rejection</label>
+        <textarea name="reason" class="form-control" rows="3" required placeholder="Explain why this application is being rejected..."></textarea>
+      </div>
+      <div style="display:flex;gap:0.75rem">
+        <button type="submit" class="btn btn-danger">Confirm Reject</button>
+        <button type="button" id="rejectModalClose" class="btn btn-secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  document.querySelectorAll('.reject-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('rejectForm').action = '/admin/sellers/' + btn.dataset.sellerId + '/reject';
+      document.getElementById('rejectModal').style.display = 'flex';
+    });
+  });
+  document.getElementById('rejectModalClose').addEventListener('click', () =>
+    document.getElementById('rejectModal').style.display = 'none'
+  );
+</script>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

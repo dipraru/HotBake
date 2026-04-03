@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Orders')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main>
+<div class="container" style="padding:2rem 0;padding-bottom:3rem;max-width:900px">
+  <h1 style="font-size:1.8rem;font-weight:800;margin-bottom:0.5rem">My Orders</h1>
+  <p class="text-muted mb-3">Track and manage your cake orders</p>
+  <div th:replace="~{fragments/layout :: flash}"></div>
+
+  <!-- Pending reviews banner - WITHOUT write reviews button -->
+  <div th:if="${!reviewableItems.isEmpty()}" style="background:linear-gradient(135deg,var(--amber-50) 0%,var(--orange-50) 100%);border:1px solid var(--amber-200);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:2rem;display:flex;align-items:center;gap:1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+    <i class="fa-solid fa-star" style="color:var(--amber-500);font-size:1.5rem;flex-shrink:0"></i>
+    <div>
+      <strong style="font-size:0.95rem">You have <span th:text="${reviewableItems.size()}"></span> pending review(s)</strong>
+      <p style="font-size:0.82rem;color:var(--amber-700);margin:0.3rem 0 0 0">Share your experience with your delivered orders below</p>
+    </div>
+  </div>
+
+  <div th:if="${!orders.isEmpty()}">
+    <div th:each="order : ${orders}" style="background:hsl(0,0%,100%);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-bottom:1.75rem;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:all 0.3s ease">
+      <!-- Order Header with Review Button on Right -->
+      <div style="background:linear-gradient(90deg, var(--color-primary-light) 0%, var(--blue-50) 100%);padding:1.25rem;border-bottom:2px solid var(--color-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+        <div>
+          <div style="font-weight:700;font-size:1.05rem">Order #<span th:text="${order.id}"></span></div>
+          <div class="text-muted" style="font-size:0.82rem;margin-top:0.25rem" th:text="${#temporals.format(order.createdAt,'dd MMM yyyy')}"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <span class="badge" style="font-size:0.82rem;padding:0.4rem 0.8rem;border-radius:var(--radius-sm)"
+                th:classappend="${order.status.name() == 'PENDING'} ? 'badge-pending' :
+                               (${order.status.name() == 'CONFIRMED'} ? 'badge-confirmed' :
+                               (${order.status.name() == 'PROCESSING'} ? 'badge-processing' :
+                               (${order.status.name() == 'SHIPPED'} ? 'badge-shipped' :
+                               (${order.status.name() == 'DELIVERED'} ? 'badge-delivered' : 'badge-cancelled'))))"
+                th:text="${order.status.displayName}"></span>
+          <form th:action="@{/buyer/orders/{id}/cancel(id=${order.id})}" method="post"
+                th:if="${order.status.name() == 'PENDING' or order.status.name() == 'CONFIRMED'}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn btn-sm btn-outline"
+                    onclick="return confirm('Cancel this order?')"
+                    style="color:var(--red-500);border-color:var(--red-500);font-size:0.8rem">
+              Cancel
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Order Items -->
+      <div style="padding:1.25rem;border-bottom:1px solid var(--color-border)">
+        <div th:each="item : ${order.items}" style="display:flex;gap:1rem;margin-bottom:1rem">
+          <img th:if="${item.product.primaryImage != null}"
+               th:src="@{/images/{id}(id=${item.product.primaryImage.id})}"
+               style="width:70px;height:70px;border-radius:var(--radius-md);object-fit:cover;flex-shrink:0;border:1px solid var(--color-border)"/>
+          <div th:if="${item.product.primaryImage == null}"
+               style="width:70px;height:70px;border-radius:var(--radius-md);background:var(--rose-100);display:grid;place-items:center;color:var(--rose-400);flex-shrink:0;border:1px solid var(--color-border)">
+            <i class="fa-solid fa-cake-candles" style="font-size:1.8rem"></i>
+          </div>
+          <div style="flex:1">
+            <a th:href="@{/products/{id}(id=${item.product.id})}" style="text-decoration:none;color:inherit">
+              <p style="font-weight:600;margin:0;font-size:0.95rem;color:var(--color-primary);cursor:pointer;transition:color 0.2s" 
+                 th:text="${item.product.name}"></p>
+            </a>
+            <p style="color:var(--color-muted);font-size:0.8rem;margin:0.25rem 0 0 0" th:text="${item.pounds} + ' lbs @ ৳' + ${#numbers.formatDecimal(item.pricePerPound,0,'COMMA',2,'POINT')} + '/lb'"></p>
+            <p style="color:var(--color-muted);font-size:0.8rem;margin:0.25rem 0 0 0">From <strong th:text="${item.product.sellerProfile.shopName}"></strong></p>
+            <!-- Write Review or Already Reviewed Badge for each item -->
+            <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+              <a th:if="${order.status.name() == 'DELIVERED' and item.review == null}" 
+                 th:href="@{/buyer/reviews(orderItemId=${item.id})}" 
+                 class="btn btn-sm" 
+                 style="background:var(--color-primary) !important;color:hsl(0,0%,100%);border:none;font-size:0.75rem;padding:0.3rem 0.6rem;display:flex !important;align-items:center;gap:0.3rem">
+                <i class="fa-solid fa-pen"></i> Write Review
+              </a>
+              <span th:if="${order.status.name() == 'DELIVERED' and item.review != null}" 
+                    class="badge" 
+                    style="background:var(--green-500);color:hsl(0,0%,100%);font-size:0.7rem;padding:0.3rem 0.6rem;border-radius:var(--radius-sm);display:flex;align-items:center;gap:0.2rem">
+                <i class="fa-solid fa-check-circle" style="font-size:0.6rem"></i> Reviewed
+              </span>
+            </div>
+          </div>
+          <span style="font-weight:700;color:var(--color-primary);white-space:nowrap">৳ <span th:text="${#numbers.formatDecimal(item.subtotal,0,'COMMA',2,'POINT')}"></span></span>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div style="padding:1.25rem;border-bottom:1px solid var(--color-border);background:var(--neutral-50);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--color-muted)">
+          <i class="fa-solid fa-map-pin"></i>
+          <span th:text="${order.deliveryAddress}"></span>
+        </div>
+        <div style="font-weight:800;font-size:1.1rem;color:var(--color-primary)">
+          Total: ৳ <span th:text="${#numbers.formatDecimal(order.totalAmount,0,'COMMA',2,'POINT')}"></span>
+        </div>
+      </div>
+
+      <!-- Order Timeline (Expandable) -->
+      <details style="padding:0;cursor:pointer">
+        <summary style="padding:1.25rem;font-weight:700;color:var(--color-primary);display:flex;align-items:center;gap:0.75rem;user-select:none">
+          <i class="fa-solid fa-timeline" style="font-size:0.9rem"></i>
+          View Order Timeline
+          <i class="fa-solid fa-chevron-down" style="margin-left:auto;font-size:0.8rem;transition:transform 0.2s"></i>
+        </summary>
+
+        <div style="padding:0 1.25rem 1.25rem;border-top:1px solid var(--color-border);background:var(--neutral-50)">
+          <!-- Timeline Container -->
+          <div style="position:relative;padding-left:30px">
+            <!-- Timeline Line -->
+            <div style="position:absolute;left:6px;top:0;bottom:0;width:2px;background:linear-gradient(180deg, var(--green-400) 0%, var(--green-200) 100%);border-radius:1px"></div>
+
+            <!-- Timeline Items -->
+            <div style="position:relative;margin-bottom:1.5rem">
+              <div style="position:absolute;left:-26px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--green-500);border:3px solid hsl(0,0%,100%);box-shadow:0 0 0 2px var(--green-500)"></div>
+              <div style="font-weight:700;font-size:0.9rem">Order Placed</div>
+              <div style="font-size:0.8rem;color:var(--color-muted);margin-top:0.25rem" th:text="${#temporals.format(order.createdAt,'dd MMM yyyy, hh:mm a')}"></div>
+            </div>
+
+            <div style="position:relative;margin-bottom:1.5rem"
+                 th:if="${order.confirmedAt != null or order.status.name() != 'PENDING'}">
+              <div th:classappend="${order.confirmedAt != null or order.status.name() != 'PENDING'} ? 'style=background:var(--green-500)' : 'style=background:var(--gray-300)'"
+                   style="position:absolute;left:-26px;top:3px;width:16px;height:16px;border-radius:50%;border:3px solid hsl(0,0%,100%);box-shadow:0 0 0 2px;">
+              </div>
+              <div style="font-weight:700;font-size:0.9rem" th:classappend="${order.confirmedAt != null or order.status.name() != 'PENDING'} ? '' : 'style=color:var(--gray-500)'">Order Confirmed</div>
+              <div style="font-size:0.8rem;color:var(--color-muted);margin-top:0.25rem" 
+                   th:text="${order.confirmedAt != null ? #temporals.format(order.confirmedAt,'dd MMM yyyy, hh:mm a') : 'Pending'}"></div>
+            </div>
+
+            <div style="position:relative;margin-bottom:1.5rem"
+                 th:if="${order.processingAt != null or order.status.name() == 'PROCESSING' or order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'}">
+              <div th:classappend="${order.processingAt != null or order.status.name() == 'PROCESSING' or order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'} ? 'style=background:var(--green-500)' : 'style=background:var(--gray-300)'"
+                   style="position:absolute;left:-26px;top:3px;width:16px;height:16px;border-radius:50%;border:3px solid hsl(0,0%,100%);box-shadow:0 0 0 2px;">
+              </div>
+              <div style="font-weight:700;font-size:0.9rem" th:classappend="${order.processingAt != null} ? '' : 'style=color:var(--gray-500)'">Being Prepared</div>
+              <div style="font-size:0.8rem;color:var(--color-muted);margin-top:0.25rem" 
+                   th:text="${order.processingAt != null ? #temporals.format(order.processingAt,'dd MMM yyyy, hh:mm a') : 'In progress'}"></div>
+            </div>
+
+            <div style="position:relative;margin-bottom:1.5rem"
+                 th:if="${order.shippedAt != null or order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'}">
+              <div th:classappend="${order.shippedAt != null or order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'} ? 'style=background:var(--green-500)' : 'style=background:var(--gray-300)'"
+                   style="position:absolute;left:-26px;top:3px;width:16px;height:16px;border-radius:50%;border:3px solid hsl(0,0%,100%);box-shadow:0 0 0 2px;">
+              </div>
+              <div style="font-weight:700;font-size:0.9rem" th:classappend="${order.shippedAt != null} ? '' : 'style=color:var(--gray-500)'">Shipped</div>
+              <div style="font-size:0.8rem;color:var(--color-muted);margin-top:0.25rem" 
+                   th:text="${order.shippedAt != null ? #temporals.format(order.shippedAt,'dd MMM yyyy, hh:mm a') : 'In transit'}"></div>
+            </div>
+
+            <div style="position:relative;margin-bottom:0"
+                 th:if="${order.deliveredAt != null or order.status.name() == 'DELIVERED'}">
+              <div th:classappend="${order.deliveredAt != null or order.status.name() == 'DELIVERED'} ? 'style=background:var(--green-500)' : 'style=background:var(--gray-300)'"
+                   style="position:absolute;left:-26px;top:3px;width:16px;height:16px;border-radius:50%;border:3px solid hsl(0,0%,100%);box-shadow:0 0 0 2px;">
+              </div>
+              <div style="font-weight:700;font-size:0.9rem" th:classappend="${order.deliveredAt != null} ? '' : 'style=color:var(--gray-500)'">Delivered</div>
+              <div style="font-size:0.8rem;color:var(--color-muted);margin-top:0.25rem" 
+                   th:text="${order.deliveredAt != null ? #temporals.format(order.deliveredAt,'dd MMM yyyy, hh:mm a') : 'Awaiting delivery'}"></div>
+            </div>
+
+            <div style="position:relative"
+                 th:if="${order.status.name() == 'CANCELLED'}">
+              <div style="position:absolute;left:-26px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--red-500);border:3px solid hsl(0,0%,100%);box-shadow:0 0 0 2px var(--red-500)"></div>
+              <div style="font-weight:700;font-size:0.9rem;color:var(--red-600)">Cancelled</div>
+              <div style="font-size:0.8rem;color:var(--red-500);margin-top:0.25rem" 
+                   th:text="${order.cancelledAt != null ? #temporals.format(order.cancelledAt,'dd MMM yyyy, hh:mm a') : 'Order cancelled'}"></div>
+              <div th:if="${order.cancellationReason != null and !order.cancellationReason.isBlank()}"
+                   style="font-size:0.8rem;color:var(--red-600);margin-top:0.25rem;font-style:italic" 
+                   th:text="'Reason: ' + ${order.cancellationReason}"></div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- Already Reviewed Badge -->
+      <div th:if="${order.hasReview == true}"
+           style="padding:1.25rem;border-top:1px solid var(--color-border);background:var(--green-50);display:flex;align-items:center;gap:0.75rem">
+        <i class="fa-solid fa-check-circle" style="color:var(--green-600);font-size:1.1rem"></i>
+        <span style="font-weight:600;color:var(--green-900)">You've already shared your feedback for this order</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" th:if="${orders.isEmpty()}">
+    <div class="empty-icon"><i class="fa-solid fa-box"></i></div>
+    <h3>No orders yet</h3>
+    <p>Start shopping and your orders will appear here.</p>
+    <a th:href="@{/products}" class="btn btn-primary">Browse Cakes</a>
+  </div>
+</div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
+
