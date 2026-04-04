@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<!-- ═══════════════════════════════════════════
+     FRAGMENT: head
+     Usage: <head th:replace="~{fragments/layout :: head('Page Title')}">
+     ═══════════════════════════════════════════ -->
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title} + ' — HotBake'">HotBake</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/main.css}"/>
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/static/favicon.svg}"/>
+</head>
+
+<!-- ═══════════════════════════════════════════
+     FRAGMENT: navbar
+     ═══════════════════════════════════════════ -->
+<nav th:fragment="navbar" class="navbar">
+    <div class="nav-container">
+        <!-- Logo -->
+        <a th:href="@{/}" class="nav-logo">
+            <span class="logo-icon"><i class="fa-solid fa-cake-candles"></i></span>
+            <span class="logo-text">Hot<span class="logo-accent">Bake</span></span>
+        </a>
+
+        <!-- Search -->
+        <form class="nav-search" th:action="@{/search}" method="get">
+            <div class="search-wrap">
+                <select name="category" class="search-cat">
+                    <option value="">All Categories</option>
+                    <option th:each="cat : ${T(com.hotbake.enums.ProductCategory).values()}"
+                            th:value="${cat.name()}"
+                            th:text="${cat.displayName}">Cat</option>
+                </select>
+                <input type="text" name="q" placeholder="Search for cakes, cupcakes..." class="search-input"/>
+                <button type="submit" class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+        </form>
+
+        <!-- Nav right -->
+        <div class="nav-right">
+            <!-- Cart -->
+            <a th:href="@{/cart}" class="nav-cart" sec:authorize="hasRole('BUYER')">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span class="cart-count" th:if="${session.cart != null and !session.cart.isEmpty()}"
+                      th:text="${session.cart.size()}">0</span>
+            </a>
+
+            <!-- Guest links -->
+            <div class="nav-auth" sec:authorize="!isAuthenticated()">
+                <a th:href="@{/auth/login}" class="btn-outline-sm">Login</a>
+                <a th:href="@{/auth/register}" class="btn-primary-sm">Sign Up</a>
+            </div>
+
+            <!-- Authenticated user dropdown -->
+            <div class="nav-user-wrap" sec:authorize="isAuthenticated()">
+                <button class="nav-user-btn" id="userMenuBtn">
+                    <div class="user-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <span class="user-name-short" sec:authentication="name">user@email.com</span>
+                    <i class="fa-solid fa-chevron-down" style="font-size:0.7rem"></i>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="dropdown-header">
+                        <i class="fa-solid fa-user-circle"></i>
+                        <span sec:authentication="name">email</span>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a th:href="@{/buyer/profile}" sec:authorize="hasRole('BUYER')" class="dropdown-item">
+                        <i class="fa-solid fa-user"></i> My Profile
+                    </a>
+                    <a th:href="@{/buyer/orders}" sec:authorize="hasRole('BUYER')" class="dropdown-item">
+                        <i class="fa-solid fa-box"></i> My Orders
+                    </a>
+                    <a th:href="@{/buyer/addresses}" sec:authorize="hasRole('BUYER')" class="dropdown-item">
+                        <i class="fa-solid fa-location-dot"></i> Addresses
+                    </a>
+                    <a th:href="@{/auth/seller-apply}" sec:authorize="hasRole('BUYER') and !hasRole('SELLER')" class="dropdown-item">
+                        <i class="fa-solid fa-store"></i> Become a Seller
+                    </a>
+                    <a th:href="@{/seller/dashboard}" sec:authorize="hasRole('SELLER')" class="dropdown-item">
+                        <i class="fa-solid fa-store"></i> Seller Dashboard
+                    </a>
+                    <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')" class="dropdown-item">
+                        <i class="fa-solid fa-shield-halved"></i> Admin Panel
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <form th:action="@{/auth/logout}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="dropdown-item dropdown-logout">
+                            <i class="fa-solid fa-right-from-bracket"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile hamburger -->
+        <button class="hamburger" id="hamburger">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     FRAGMENT: flash messages
+     ═══════════════════════════════════════════ -->
+<div th:fragment="flash">
+    <div th:if="${success}" class="flash flash-success">
+        <i class="fa-solid fa-circle-check"></i>
+        <span th:text="${success}"></span>
+        <button class="flash-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div th:if="${error}" class="flash flash-error">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span th:text="${error}"></span>
+        <button class="flash-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     FRAGMENT: footer
+     ═══════════════════════════════════════════ -->
+<footer th:fragment="footer" class="site-footer">
+    <div class="footer-container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="/" class="footer-logo">
+                    <i class="fa-solid fa-cake-candles"></i>
+                    Hot<span>Bake</span>
+                </a>
+                <p>Bangladesh's premier online marketplace for handcrafted cakes and bakery delights.</p>
+                <div class="footer-social">
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-youtube"></i></a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h4>Shop</h4>
+                <ul>
+                    <li><a th:href="@{/products}">All Products</a></li>
+                    <li><a th:href="@{/products(category='CUPCAKE')}">Cupcakes</a></li>
+                    <li><a th:href="@{/products(category='CHOCOLATE_CAKE')}">Chocolate Cakes</a></li>
+                    <li><a th:href="@{/products(category='VANILLA_CAKE')}">Vanilla Cakes</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Account</h4>
+                <ul>
+                    <li><a th:href="@{/auth/login}">Login</a></li>
+                    <li><a th:href="@{/auth/register}">Register</a></li>
+                    <li><a th:href="@{/auth/seller-apply}">Sell on HotBake</a></li>
+                    <li><a th:href="@{/buyer/orders}">Track Orders</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Payment</h4>
+                <div class="payment-badge">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                    <div>
+                        <strong>Cash on Delivery</strong>
+                        <small>Pay when your cake arrives</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 HotBake. All rights reserved.</p>
+            <p>Built with <i class="fa-solid fa-heart" style="color:var(--rose-500)"></i> using Spring Boot</p>
+        </div>
+    </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════
+     FRAGMENT: scripts
+     ═══════════════════════════════════════════ -->
+<div th:fragment="scripts">
+    <script th:src="@{/js/main.js}"></script>
+</div>
+
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Browse Cakes')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main>
+<div class="container" style="padding-top:1.5rem; padding-bottom:3rem">
+
+  <div th:replace="~{fragments/layout :: flash}"></div>
+
+  <!-- Page header -->
+  <div class="d-flex align-center justify-between flex-wrap gap-2 mb-3">
+    <div>
+      <h1 style="font-size:1.5rem; font-weight:800">
+        <span th:if="${query != null and !query.isEmpty()}">Results for "<span th:text="${query}" style="color:var(--color-primary)"></span>"</span>
+        <span th:if="${query == null or query.isEmpty()}">All Cakes</span>
+      </h1>
+      <p class="text-muted fs-sm" th:text="${products.totalElements} + ' products found'"></p>
+    </div>
+    <!-- Sort -->
+    <form th:action="@{/products}" method="get" style="display:flex;gap:0.5rem;align-items:center">
+      <input type="hidden" name="category" th:value="${selectedCategory}"/>
+      <input type="hidden" name="q" th:value="${query}"/>
+      <label class="fs-sm fw-bold" style="white-space:nowrap">Sort by:</label>
+      <select name="sort" class="form-control" style="width:auto;padding:0.4rem 0.75rem" onchange="this.form.submit()">
+        <option value="newest" th:selected="${selectedSort == 'newest'}">Newest First</option>
+        <option value="price_asc" th:selected="${selectedSort == 'price_asc'}">Price: Low to High</option>
+        <option value="price_desc" th:selected="${selectedSort == 'price_desc'}">Price: High to Low</option>
+      </select>
+    </form>
+  </div>
+
+  <!-- Category pills -->
+  <div class="category-bar mb-3">
+    <a th:href="@{/products}" th:classappend="${selectedCategory == null or selectedCategory.isEmpty()} ? 'active'" class="category-pill">
+      All
+    </a>
+    <a th:each="cat : ${categories}"
+       th:href="@{/products(category=${cat.name()})}"
+       th:classappend="${selectedCategory == cat.name()} ? 'active'"
+       class="category-pill">
+      <th:block th:switch="${cat.name()}">
+        <span th:case="'CUPCAKE'">🧁</span>
+        <span th:case="'TUB_CAKE'">🍮</span>
+        <span th:case="'VANILLA_CAKE'">🎂</span>
+        <span th:case="'CHOCOLATE_CAKE'">🍫</span>
+        <span th:case="'OTHERS'">✨</span>
+      </th:block>
+      <span th:text="${cat.displayName}">Cat</span>
+    </a>
+  </div>
+
+  <!-- Products -->
+  <div class="products-grid" th:if="${products.totalElements > 0}">
+    <a th:each="product : ${products.content}"
+       th:href="@{/products/{id}(id=${product.id})}"
+       class="product-card">
+      <div class="product-img">
+        <img th:if="${product.primaryImage != null}"
+             th:src="@{/images/{id}(id=${product.primaryImage.id})}"
+             th:alt="${product.name}" loading="lazy"/>
+        <div class="product-img-placeholder" th:if="${product.primaryImage == null}">
+          <i class="fa-solid fa-cake-candles"></i>
+        </div>
+        <span class="product-badge" th:text="${product.category.displayName}"></span>
+      </div>
+      <div class="product-info">
+        <p class="product-shop"><i class="fa-solid fa-store" style="font-size:0.65rem"></i>
+          <span th:text="${product.sellerProfile.shopName}"></span>
+        </p>
+        <h3 class="product-name" th:text="${product.name}"></h3>
+        <div class="product-rating" th:if="${product.reviewCount > 0}">
+          <span class="stars">
+            <th:block th:each="i : ${#numbers.sequence(1,5)}">
+              <i th:classappend="${i <= product.averageRating} ? 'fa-solid' : 'fa-regular'" class="fa-star"></i>
+            </th:block>
+          </span>
+          <span class="rating-count" th:text="'(' + ${product.reviewCount} + ')'"></span>
+        </div>
+        <p class="product-price">
+          ৳ <span th:text="${#numbers.formatDecimal(product.pricePerPound,0,'COMMA',2,'POINT')}"></span>
+          <span class="per-unit">/pound</span>
+        </p>
+      </div>
+    </a>
+  </div>
+
+  <!-- Empty -->
+  <div class="empty-state" th:if="${products.totalElements == 0}">
+    <div class="empty-icon"><i class="fa-solid fa-cake-candles"></i></div>
+    <h3>No cakes found</h3>
+    <p>Try a different search or browse all categories.</p>
+    <a th:href="@{/products}" class="btn btn-primary">Browse All</a>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" th:if="${totalPages > 1}">
+    <a th:href="@{/products(page=${currentPage - 1}, category=${selectedCategory}, sort=${selectedSort})}"
+       class="page-btn" th:classappend="${currentPage == 0} ? 'disabled'"
+       th:if="${currentPage > 0}">
+      <i class="fa-solid fa-chevron-left"></i>
+    </a>
+    <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+       th:href="@{/products(page=${i}, category=${selectedCategory}, sort=${selectedSort})}"
+       th:text="${i + 1}"
+       th:classappend="${i == currentPage} ? 'active'"
+       class="page-btn"></a>
+    <a th:href="@{/products(page=${currentPage + 1}, category=${selectedCategory}, sort=${selectedSort})}"
+       class="page-btn" th:if="${currentPage < totalPages - 1}">
+      <i class="fa-solid fa-chevron-right"></i>
+    </a>
+  </div>
+
+</div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
