@@ -1,6 +1,9 @@
 ### Java / Maven / Spring Boot ###
 target/
 build/
+.h2/
+.mvn/
+.postgres16-hotbake/
 
 *.class
 *.log

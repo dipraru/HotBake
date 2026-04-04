@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Fresh Baked Happiness')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <p class="hero-eyebrow"><i class="fa-solid fa-fire"></i> Fresh from the oven, every day</p>
+      <h1 class="display-font">Bangladesh's Sweetest<br/>Cake Marketplace</h1>
+      <p>Order handcrafted cakes from talented local bakers. Choose your size, customise your order, delivered fresh to your door.</p>
+      <div class="hero-cta">
+        <a th:href="@{/products}" class="btn-hero-primary btn">
+          <i class="fa-solid fa-cake-candles"></i> Shop Now
+        </a>
+        <a th:href="@{/auth/seller-apply}" class="btn-hero-outline btn" sec:authorize="!hasRole('SELLER') and !hasRole('ADMIN')">
+          Start Selling
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><strong>500+</strong><span>Cake Varieties</span></div>
+        <div class="hero-stat"><strong>100%</strong><span>Handcrafted</span></div>
+        <div class="hero-stat"><strong>COD</strong><span>Pay on Delivery</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="container">
+
+    <!-- CATEGORIES -->
+    <section class="section-sm" style="padding-bottom:0">
+      <div class="section-title">
+        <h2>Browse Categories</h2>
+        <div class="title-line"></div>
+      </div>
+      <div class="category-grid">
+        <a th:href="@{/products(category='CUPCAKE')}" class="category-card">
+          <span class="cat-icon">🧁</span>
+          <span class="cat-name">Cupcakes</span>
+        </a>
+        <a th:href="@{/products(category='TUB_CAKE')}" class="category-card">
+          <span class="cat-icon">🍮</span>
+          <span class="cat-name">Tub Cakes</span>
+        </a>
+        <a th:href="@{/products(category='VANILLA_CAKE')}" class="category-card">
+          <span class="cat-icon">🎂</span>
+          <span class="cat-name">Vanilla Cakes</span>
+        </a>
+        <a th:href="@{/products(category='CHOCOLATE_CAKE')}" class="category-card">
+          <span class="cat-icon">🍫</span>
+          <span class="cat-name">Chocolate Cakes</span>
+        </a>
+        <a th:href="@{/products(category='OTHERS')}" class="category-card">
+          <span class="cat-icon">✨</span>
+          <span class="cat-name">Others</span>
+        </a>
+        <a th:href="@{/products}" class="category-card">
+          <span class="cat-icon">🔍</span>
+          <span class="cat-name">All Products</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- FLASH -->
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <!-- LATEST PRODUCTS -->
+    <section class="section">
+      <div class="section-title">
+        <h2>Freshly Listed</h2>
+        <p>Discover the newest cakes from our bakers</p>
+        <div class="title-line"></div>
+      </div>
+
+      <div class="products-grid" th:if="${not #lists.isEmpty(latestProducts)}">
+        <a th:each="product : ${latestProducts}"
+           th:href="@{/products/{id}(id=${product.id})}"
+           class="product-card">
+          <div class="product-img">
+            <img th:if="${product.primaryImage != null}"
+                 th:src="@{/images/{id}(id=${product.primaryImage.id})}"
+                 th:alt="${product.name}" loading="lazy"/>
+            <div class="product-img-placeholder" th:if="${product.primaryImage == null}">
+              <i class="fa-solid fa-cake-candles"></i>
+            </div>
+            <span class="product-badge" th:text="${product.category.displayName}">Category</span>
+          </div>
+          <div class="product-info">
+            <p class="product-shop">
+              <i class="fa-solid fa-store" style="font-size:0.65rem"></i>
+              <span th:text="${product.sellerProfile.shopName}">Shop</span>
+            </p>
+            <h3 class="product-name" th:text="${product.name}">Product Name</h3>
+            <div class="product-rating" th:if="${product.reviewCount > 0}">
+              <span class="stars">
+                <th:block th:each="i : ${#numbers.sequence(1,5)}">
+                  <i th:classappend="${i <= product.averageRating} ? 'fa-solid' : 'fa-regular'"
+                     class="fa-star"></i>
+                </th:block>
+              </span>
+              <span class="rating-count" th:text="'(' + ${product.reviewCount} + ')'"></span>
+            </div>
+            <p class="product-price">
+              ৳ <span th:text="${#numbers.formatDecimal(product.pricePerPound, 0, 'COMMA', 2, 'POINT')}">0.00</span>
+              <span class="per-unit">/pound</span>
+            </p>
+          </div>
+        </a>
+      </div>
+
+      <div class="empty-state" th:if="${#lists.isEmpty(latestProducts)}">
+        <div class="empty-icon"><i class="fa-solid fa-cake-candles"></i></div>
+        <h3>No products yet</h3>
+        <p>Our bakers are preparing something delicious. Check back soon!</p>
+      </div>
+
+      <div class="text-center mt-4">
+        <a th:href="@{/products}" class="btn btn-outline">
+          View All Cakes <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section style="padding: 3rem 0; background: var(--rose-50); border-radius: var(--radius-xl); padding: 3rem; margin-bottom: 3rem;">
+      <div class="section-title">
+        <h2>How HotBake Works</h2>
+        <p>Order fresh cakes in three easy steps</p>
+        <div class="title-line"></div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 2rem;">
+        <div class="text-center">
+          <div style="width:72px;height:72px;background:var(--color-primary);border-radius:50%;display:grid;place-items:center;margin:0 auto 1rem;font-size:1.75rem;color:hsl(0,0%,100%)">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <h3 style="font-size:1.1rem;margin-bottom:0.5rem">Browse &amp; Choose</h3>
+          <p style="font-size:0.88rem;color:var(--color-muted)">Explore hundreds of handcrafted cakes from local bakers.</p>
+        </div>
+        <div class="text-center">
+          <div style="width:72px;height:72px;background:var(--amber-500);border-radius:50%;display:grid;place-items:center;margin:0 auto 1rem;font-size:1.75rem;color:hsl(0,0%,100%)">
+            <i class="fa-solid fa-scale-balanced"></i>
+          </div>
+          <h3 style="font-size:1.1rem;margin-bottom:0.5rem">Pick Your Pounds</h3>
+          <p style="font-size:0.88rem;color:var(--color-muted)">Select how many pounds you need. Price is calculated automatically.</p>
+        </div>
+        <div class="text-center">
+          <div style="width:72px;height:72px;background:var(--green-500);border-radius:50%;display:grid;place-items:center;margin:0 auto 1rem;font-size:1.75rem;color:hsl(0,0%,100%)">
+            <i class="fa-solid fa-truck-fast"></i>
+          </div>
+          <h3 style="font-size:1.1rem;margin-bottom:0.5rem">Delivered Fresh</h3>
+          <p style="font-size:0.88rem;color:var(--color-muted)">Pay cash on delivery when your cake arrives at your door.</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
