@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # ── PostgreSQL Database ──────────────────────────────
   db:
     image: postgres:15-alpine
     container_name: hotbake-db
@@ -19,6 +20,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Spring Boot Application ───────────────────────────
   app:
     build:
       context: .

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Manage Reviews')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div class="dashboard-layout">
+  <aside class="sidebar admin-sidebar">
+    <div class="sidebar-brand"><div class="shop-name">HotBake Admin</div><div class="role-tag">Administrator</div></div>
+    <p class="sidebar-nav-label">Management</p>
+    <a th:href="@{/admin/dashboard}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+    <a th:href="@{/admin/sellers}" class="sidebar-link"><i class="fa-solid fa-store"></i> Sellers</a>
+    <a th:href="@{/admin/users}" class="sidebar-link"><i class="fa-solid fa-users"></i> Users</a>
+    <a th:href="@{/admin/products}" class="sidebar-link"><i class="fa-solid fa-cake-candles"></i> Products</a>
+    <a th:href="@{/admin/reviews}" class="sidebar-link active"><i class="fa-solid fa-star"></i> Reviews</a>
+    <p class="sidebar-nav-label">System</p>
+    <a th:href="@{/}" class="sidebar-link"><i class="fa-solid fa-globe"></i> Visit Store</a>
+    <form th:action="@{/auth/logout}" method="post" style="margin:0">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <button type="submit" class="sidebar-link" style="width:100%;border:none;background:none;cursor:pointer;text-align:left">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </button>
+    </form>
+  </aside>
+  <main class="dash-main">
+    <div class="dash-header"><h1>Review Moderation</h1><p>Delete inappropriate or spam reviews</p></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>Reviewer</th><th>Rating</th><th>Comment</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr th:each="review : ${reviews}">
+              <td>
+                <a th:href="@{/products/{id}(id=${review.product.id})}" th:text="${review.product.name}"
+                   style="font-weight:600;color:var(--color-primary);font-size:0.88rem"></a>
+                <div style="font-size:0.75rem;color:var(--color-muted)" th:text="${review.product.sellerProfile.shopName}"></div>
+              </td>
+              <td>
+                <div class="seller-info-row">
+                  <strong th:text="${review.buyer.fullName}"></strong>
+                  <small th:text="${review.buyer.email}"></small>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex;gap:2px">
+                  <th:block th:each="i : ${#numbers.sequence(1,5)}">
+                    <i th:classappend="${i <= review.rating} ? 'fa-solid' : 'fa-regular'"
+                       class="fa-star" style="font-size:0.8rem;color:var(--amber-400)"></i>
+                  </th:block>
+                </div>
+                <small th:text="${review.rating} + '/5'"></small>
+              </td>
+              <td style="max-width:300px;font-size:0.85rem" th:text="${review.comment}"></td>
+              <td style="font-size:0.82rem" th:text="${#temporals.format(review.createdAt,'dd MMM yyyy')}"></td>
+              <td>
+                <form th:action="@{/admin/reviews/{id}/delete(id=${review.id})}" method="post">
+                  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                  <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this review?')">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" th:if="${reviews.isEmpty()}"><p>No reviews to moderate.</p></div>
+    </div>
+  </main>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

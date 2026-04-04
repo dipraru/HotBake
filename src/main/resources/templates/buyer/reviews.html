@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Reviews')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main>
+<div class="container" style="padding:2rem 0;max-width:760px">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+    <a th:if="${orderItemId != null}" href="/buyer/orders" style="color:var(--color-primary);text-decoration:none;display:flex;align-items:center;gap:0.3rem">
+      <i class="fa-solid fa-chevron-left" style="font-size:0.8rem"></i> Back to Orders
+    </a>
+    <h1 style="font-size:1.5rem;font-weight:800;margin:0">
+      <i class="fa-solid fa-star" style="color:var(--amber-400)"></i> 
+      <span th:if="${orderItemId == null}">My Reviews</span>
+      <span th:if="${orderItemId != null}">Review <span th:if="${!reviewableItems.isEmpty()}" th:text="${reviewableItems.get(0).product.name}"></span></span>
+    </h1>
+  </div>
+  <div th:replace="~{fragments/layout :: flash}"></div>
+
+  <!-- Pending reviews -->
+  <div th:if="${!reviewableItems.isEmpty()}" class="card mb-4">
+    <div class="card-header" style="background:var(--amber-50)">
+      <h3 style="font-size:1rem;color:var(--amber-600)">
+        <i class="fa-solid fa-clock"></i> Pending Reviews (<span th:text="${reviewableItems.size()}"></span>)
+      </h3>
+    </div>
+    <div th:each="item : ${reviewableItems}" style="padding:1.25rem;border-bottom:1px solid var(--color-border)">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+        <img th:if="${item.product.primaryImage != null}"
+             th:src="@{/images/{id}(id=${item.product.primaryImage.id})}"
+             style="width:48px;height:48px;border-radius:var(--radius-sm);object-fit:cover"/>
+        <div>
+          <p style="font-weight:600;margin:0;font-size:0.9rem" th:text="${item.product.name}"></p>
+          <p style="color:var(--color-muted);font-size:0.78rem;margin:0" th:text="${item.pounds} + ' lbs'"></p>
+        </div>
+      </div>
+      <form th:action="@{/reviews/add}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="orderItemId" th:value="${item.id}"/>
+        <input type="hidden" th:name="redirect" th:value="${orderItemId != null} ? '/buyer/orders' : '/buyer/reviews'"/>
+        <input type="hidden" class="rating-hidden" name="rating" value="0"/>
+        <div style="display:flex;gap:0.25rem;margin-bottom:0.75rem">
+          <i th:each="s : ${#numbers.sequence(1,5)}" class="fa-solid fa-star star-input"
+             th:data-value="${s}" style="font-size:1.5rem;color:hsl(213,27%,84%);cursor:pointer"></i>
+        </div>
+        <div style="display:flex;gap:0.75rem">
+          <input type="text" name="comment" class="form-control" placeholder="Share your experience..." required/>
+          <button type="submit" class="btn btn-primary" style="white-space:nowrap">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Past reviews -->
+  <div th:if="${!reviews.isEmpty()}">
+    <h2 style="font-size:1.1rem;margin-bottom:1rem">Past Reviews</h2>
+    <div th:each="review : ${reviews}" class="card mb-2">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <strong th:text="${review.product.name}"></strong>
+            <div style="margin:0.3rem 0">
+              <th:block th:each="i : ${#numbers.sequence(1,5)}">
+                <i th:classappend="${i <= review.rating} ? 'fa-solid' : 'fa-regular'"
+                   class="fa-star" style="color:var(--amber-400);font-size:0.9rem"></i>
+              </th:block>
+            </div>
+            <p style="font-size:0.88rem;color:var(--neutral-600);margin:0" th:text="${review.comment}"></p>
+            <small class="text-muted" th:text="${#temporals.format(review.createdAt,'dd MMM yyyy')}"></small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" th:if="${reviews.isEmpty() and reviewableItems.isEmpty()}">
+    <div class="empty-icon"><i class="fa-solid fa-star"></i></div>
+    <h3>No reviews yet</h3>
+    <p>Your reviews will appear here after your orders are delivered.</p>
+  </div>
+</div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+<script>
+document.querySelectorAll('.rating-hidden').forEach(input => {
+  const form = input.closest('form');
+  const stars = form.querySelectorAll('.star-input');
+  
+  // Initialize star display based on current hidden input value
+  const currentRating = parseInt(input.value) || 0;
+  if (currentRating > 0) {
+    stars.forEach((s, i) => s.style.color = i < currentRating ? 'hsl(43,96%,56%)' : 'hsl(213,27%,84%)');
+  }
+  
+  const updateStarDisplay = (rating) => {
+    stars.forEach((s, i) => s.style.color = i < rating ? 'hsl(43,96%,56%)' : 'hsl(213,27%,84%)');
+  };
+  
+  stars.forEach((star, idx) => {
+    star.addEventListener('click', () => {
+      const selectedRating = parseInt(star.dataset.value);
+      input.value = selectedRating;
+      updateStarDisplay(selectedRating);
+    });
+    
+    // Hover effect - show preview without changing the actual value
+    star.addEventListener('mouseenter', () => {
+      if (parseInt(input.value) === 0) {
+        // If no rating selected yet, show hover preview
+        updateStarDisplay(parseInt(star.dataset.value));
+      }
+    });
+  });
+  
+  // Reset to actual selected rating on form mouseleave
+  form.addEventListener('mouseleave', () => {
+    const selectedRating = parseInt(input.value) || 0;
+    updateStarDisplay(selectedRating);
+  });
+});
+</script>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

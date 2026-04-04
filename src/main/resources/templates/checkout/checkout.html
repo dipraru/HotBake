@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Checkout')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main>
+<div class="container" style="padding:2rem 0;padding-bottom:3rem">
+  <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:1.5rem">
+    <i class="fa-solid fa-bag-shopping" style="color:var(--color-primary)"></i> Checkout
+  </h1>
+  <div th:replace="~{fragments/layout :: flash}"></div>
+
+  <div class="checkout-grid">
+    <!-- Left: Address selection and form -->
+    <div>
+      <form th:action="@{/checkout/place}" method="post" th:object="${checkoutDto}" id="checkoutForm">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <!-- Display saved addresses as list -->
+        <div class="card mb-4" th:if="${!addresses.isEmpty()}">
+          <div class="card-header"><h3 style="font-size:1rem"><i class="fa-solid fa-location-dot"></i> Select Delivery Address</h3></div>
+          <div class="card-body" style="padding:0">
+            <div th:each="addr : ${addresses}" style="border-bottom:1px solid var(--color-border);padding:1.25rem">
+              <label style="display:flex;align-items:flex-start;gap:1rem;cursor:pointer;width:100%">
+                <input type="radio" name="savedAddressId" th:value="${addr.id}" class="address-radio"
+                       style="margin-top:4px;cursor:pointer" th:checked="${addr.isDefault()}"/>
+                <div style="flex:1">
+                  <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem">
+                    <strong th:text="${addr.recipientName}"></strong>
+                    <span th:if="${addr.isDefault()}" class="badge badge-approved" style="font-size:0.7rem">Default</span>
+                  </div>
+                  <p style="font-size:0.85rem;color:var(--neutral-600);margin:0.25rem 0" th:text="${addr.fullAddress}"></p>
+                  <p style="font-size:0.8rem;color:var(--color-muted);margin:0" th:text="${addr.phone}"></p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Select New Address Button -->
+        <div class="mb-4">
+          <button type="button" id="newAddressBtn" class="btn btn-outline" style="width:100%;justify-content:center;gap:0.5rem">
+            <i class="fa-solid fa-plus"></i> Select New Address
+          </button>
+        </div>
+
+        <!-- Hidden input to track if using new address -->
+        <input type="hidden" name="useNewAddress" id="useNewAddressFlag" th:value="${addresses.isEmpty() ? 'true' : 'false'}"/>
+
+        <!-- New address form (initially hidden) -->
+        <div class="card mb-4" id="newAddressForm" th:style="${addresses.isEmpty() ? '' : 'display:none'}">
+          <div class="card-header">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <h3 style="font-size:1rem;margin:0"><i class="fa-solid fa-map-pin"></i> Delivery Address</h3>
+              <button type="button" id="closeAddressForm" class="btn-close" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--color-muted);" th:if="${!addresses.isEmpty()}">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Recipient Name *</label>
+              <input type="text" name="recipientName" class="form-control" placeholder="Full name of recipient"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Address Line *</label>
+              <input type="text" name="addressLine" class="form-control" placeholder="House/Road/Area"/>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+              <div class="form-group">
+                <label class="form-label">City *</label>
+                <input type="text" name="city" class="form-control" placeholder="Dhaka"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">District *</label>
+                <input type="text" name="district" class="form-control" placeholder="Dhaka"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone *</label>
+              <input type="tel" name="phone" class="form-control" placeholder="01XXXXXXXXX"/>
+            </div>
+            
+            <!-- Save address checkbox -->
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1.5rem;padding:1rem;background:var(--neutral-50);border-radius:var(--radius-md)">
+              <input type="checkbox" name="saveAddress" id="saveAddress" style="cursor:pointer" checked/>
+              <label for="saveAddress" style="cursor:pointer;margin:0;font-size:0.9rem">
+                <i class="fa-solid fa-bookmark" style="color:var(--color-primary);margin-right:0.3rem"></i>
+                Save this address for future orders
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery Note -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Delivery Note <span class="text-muted">(optional)</span></label>
+              <textarea name="deliveryNote" class="form-control" rows="2" placeholder="Any special instructions for delivery..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- COD notice -->
+        <div style="background:var(--green-100);border:1px solid hsl(142,76%,80%);border-radius:var(--radius-md);padding:1rem;display:flex;gap:0.75rem;align-items:center;margin-bottom:1.5rem">
+          <i class="fa-solid fa-money-bill-wave" style="font-size:1.5rem;color:var(--green-700)"></i>
+          <div>
+            <strong style="color:var(--green-700)">Cash on Delivery</strong>
+            <p style="font-size:0.82rem;color:var(--green-700);margin:0">Pay in cash when the order is delivered to you.</p>
+          </div>
+        </div>
+
+        <!-- Place Order Button -->
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="placeOrderBtn">
+          <i class="fa-solid fa-check"></i> Place Order
+        </button>
+      </form>
+    </div>
+
+    <!-- Right: Order Summary -->
+    <div class="order-summary-sticky">
+      <div class="card">
+        <div class="card-header"><h3 style="font-size:1rem">Order Summary</h3></div>
+        <div class="card-body" style="padding:0">
+          <div th:each="entry : ${cart}" style="display:flex;gap:0.75rem;padding:1rem;border-bottom:1px solid var(--color-border)">
+            <img th:if="${entry.value.primaryImageId != null}"
+                 th:src="@{/images/{id}(id=${entry.value.primaryImageId})}"
+                 style="width:48px;height:48px;border-radius:var(--radius-sm);object-fit:cover"/>
+            <div style="flex:1">
+              <p style="font-size:0.85rem;font-weight:600;margin:0" th:text="${entry.value.productName}"></p>
+              <p style="font-size:0.78rem;color:var(--color-muted);margin:0">
+                <span th:text="${#numbers.formatDecimal(entry.value.quantity,0,'COMMA',2,'POINT')}"></span>
+                <span th:text="${' ' + entry.value.quantityLabel + ' × ৳' + #numbers.formatDecimal(entry.value.pricePerUnit,0,'COMMA',2,'POINT')}"></span>
+              </p>
+            </div>
+            <span style="font-weight:700;font-size:0.9rem">৳<span th:text="${#numbers.formatDecimal(entry.value.subtotal,0,'COMMA',2,'POINT')}"></span></span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:0.9rem;color:var(--color-muted)">Total Amount</span>
+            <span style="font-size:1.4rem;font-weight:800;color:var(--color-primary)">
+              ৳ <span th:text="${#numbers.formatDecimal(cartTotal,0,'COMMA',2,'POINT')}"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const newAddressBtn = document.getElementById('newAddressBtn');
+  const newAddressForm = document.getElementById('newAddressForm');
+  const closeAddressForm = document.getElementById('closeAddressForm');
+  const useNewAddressFlag = document.getElementById('useNewAddressFlag');
+  const addressRadios = document.querySelectorAll('.address-radio');
+  const savedAddressId = document.querySelector('input[name="savedAddressId"]');
+
+  // Click "Select New Address" button
+  if (newAddressBtn) {
+    newAddressBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      newAddressForm.style.display = 'block';
+      useNewAddressFlag.value = 'true';
+      // Clear saved address selection
+      addressRadios.forEach(r => r.checked = false);
+      // Mark form inputs as required
+      newAddressForm.querySelectorAll('input[name]:not([type="checkbox"]), textarea').forEach(input => {
+        if (['recipientName', 'addressLine', 'city', 'district', 'phone'].includes(input.name)) {
+          input.required = true;
+        }
+      });
+      newAddressForm.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  // Click close button in address form
+  if (closeAddressForm) {
+    closeAddressForm.addEventListener('click', function(e) {
+      e.preventDefault();
+      newAddressForm.style.display = 'none';
+      useNewAddressFlag.value = 'false';
+      // Re-select default address
+      addressRadios.forEach(r => {
+        if (r.closest('label') && r.closest('label').querySelector('strong')) {
+          const isDefault = r.closest('label').querySelector('.badge-approved');
+          if (isDefault) r.checked = true;
+        }
+      });
+    });
+  }
+
+  // When clicking saved address radio, hide new address form
+  addressRadios.forEach(r => {
+    r.addEventListener('change', function() {
+      if (this.value !== 'new') {
+        newAddressForm.style.display = 'none';
+        useNewAddressFlag.value = 'false';
+        // Clear form inputs
+        newAddressForm.querySelectorAll('input[name]:not([type="checkbox"]), textarea').forEach(input => {
+          if (['recipientName', 'addressLine', 'city', 'district', 'phone'].includes(input.name)) {
+            input.value = '';
+            input.required = false;
+          }
+        });
+      }
+    });
+  });
+
+  // Form submission validation
+  const form = document.getElementById('checkoutForm');
+  form.addEventListener('submit', function(e) {
+    const isUsingNew = useNewAddressFlag.value === 'true';
+    const isSavedSelected = Array.from(addressRadios).some(r => r.checked && r.value !== 'new');
+    
+    if (!isUsingNew && !isSavedSelected) {
+      e.preventDefault();
+      alert('Please select an address or enter a new one.');
+      return;
+    }
+
+    if (isUsingNew) {
+      const recipientName = newAddressForm.querySelector('input[name="recipientName"]');
+      const addressLine = newAddressForm.querySelector('input[name="addressLine"]');
+      const city = newAddressForm.querySelector('input[name="city"]');
+      const phone = newAddressForm.querySelector('input[name="phone"]');
+      
+      if (!recipientName.value || !addressLine.value || !city.value || !phone.value) {
+        e.preventDefault();
+        alert('Please fill in all required address fields.');
+        return;
+      }
+    }
+  });
+});
+</script>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

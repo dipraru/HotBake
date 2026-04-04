@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Add Product')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="shop-name">Seller Panel</div><div class="role-tag">Add Product</div></div>
+    <a th:href="@{/seller/dashboard}" class="sidebar-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+    <a th:href="@{/seller/products}" class="sidebar-link"><i class="fa-solid fa-cake-candles"></i> My Products</a>
+    <a th:href="@{/seller/products/add}" class="sidebar-link active"><i class="fa-solid fa-plus"></i> Add Product</a>
+    <a th:href="@{/seller/orders}" class="sidebar-link"><i class="fa-solid fa-box"></i> Orders</a>
+    <a th:href="@{/}" class="sidebar-link"><i class="fa-solid fa-store"></i> Visit Store</a>
+  </aside>
+  <main class="dash-main">
+    <div class="dash-header">
+      <div class="breadcrumb"><a th:href="@{/seller/products}">Products</a> / Add New</div>
+      <h1>Add New Product</h1>
+    </div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="card" style="max-width:760px">
+      <div class="card-body">
+        <form th:action="@{/seller/products/add}" method="post" enctype="multipart/form-data" th:object="${productDto}">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <div class="form-group">
+            <label class="form-label">Product Name *</label>
+            <input type="text" th:field="*{name}" class="form-control"
+                   th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'"
+                   placeholder="e.g. Triple Chocolate Dream Cake" required/>
+            <p class="form-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select th:field="*{category}" class="form-control" required>
+                <option value="">Select category</option>
+                <option th:each="cat : ${categories}" th:value="${cat.name()}" th:text="${cat.displayName}"></option>
+              </select>
+              <p class="form-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Price per Pound (৳) *</label>
+              <input type="number" th:field="*{pricePerPound}" class="form-control" step="0.01" min="0.01"
+                     placeholder="0.00" required/>
+              <p class="form-error" th:if="${#fields.hasErrors('pricePerPound')}" th:errors="*{pricePerPound}"></p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description *</label>
+            <textarea th:field="*{description}" class="form-control" rows="5"
+                      placeholder="Describe your cake in detail — ingredients, flavour, customisation options..." required></textarea>
+            <p class="form-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Product Images</label>
+            <p class="form-hint">Upload up to 5 images. First image will be the cover photo.</p>
+            <div class="upload-zone" id="uploadZone">
+              <input type="file" th:name="images" id="imageUploadInput" multiple accept="image/*" style="display:none"/>
+              <i class="fa-solid fa-cloud-arrow-up" style="font-size:2rem;color:var(--neutral-400);display:block;margin-bottom:0.5rem"></i>
+              <p style="font-size:0.9rem;color:var(--neutral-500);margin:0">Click or drag & drop images here</p>
+              <p style="font-size:0.78rem;color:var(--color-muted);margin:0.25rem 0 0">PNG, JPG up to 10MB each</p>
+            </div>
+            <div class="upload-previews" id="imagePreviews"></div>
+          </div>
+          <div class="form-check form-group">
+            <input type="checkbox" th:field="*{available}" id="available"/>
+            <label for="available" class="form-label" style="margin:0">Make product visible to buyers immediately</label>
+          </div>
+          <div style="display:flex;gap:0.75rem">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Add Product</button>
+            <a th:href="@{/seller/products}" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
