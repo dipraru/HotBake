@@ -1,6 +1,5 @@
 package com.hotbake.config;
 
-import com.hotbake.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +13,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import com.hotbake.service.CustomUserDetailsService;
 
 @Configuration
 @EnableWebSecurity
@@ -52,8 +53,8 @@ public class SecurityConfig {
                                  "/error/**", "/actuator/health").permitAll()
                 // Auth endpoints (public)
                 .requestMatchers("/auth/login", "/auth/register").permitAll()
-                // Seller apply requires authentication (any role)
-                .requestMatchers("/auth/seller-apply").authenticated()
+                // Seller apply requires BUYER role only
+                .requestMatchers("/auth/seller-apply").hasRole("BUYER")
                 // Admin area
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Seller area

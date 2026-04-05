@@ -1,11 +1,5 @@
 package com.hotbake.controller;
 
-import com.hotbake.dto.SellerRegistrationDto;
-import com.hotbake.dto.UserRegistrationDto;
-import com.hotbake.model.User;
-import com.hotbake.service.SellerService;
-import com.hotbake.service.UserService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +12,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.hotbake.dto.SellerRegistrationDto;
+import com.hotbake.dto.UserRegistrationDto;
+import com.hotbake.model.User;
+import com.hotbake.service.SellerService;
+import com.hotbake.service.UserService;
+
+import jakarta.validation.Valid;
+
 @Controller
 @RequestMapping("/auth")
 public class AuthController {
@@ -27,13 +29,21 @@ public class AuthController {
 
     // ── LOGIN ─────────────────────────────────────────────
     @GetMapping("/login")
-    public String loginPage() {
+    public String loginPage(@AuthenticationPrincipal UserDetails userDetails) {
+        // Redirect already logged-in users to home
+        if (userDetails != null) {
+            return "redirect:/";
+        }
         return "auth/login";
     }
 
     // ── BUYER REGISTRATION ────────────────────────────────
     @GetMapping("/register")
-    public String registerPage(Model model) {
+    public String registerPage(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        // Redirect already logged-in users to home
+        if (userDetails != null) {
+            return "redirect:/";
+        }
         model.addAttribute("user", new UserRegistrationDto());
         return "auth/register";
     }
