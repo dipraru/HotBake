@@ -157,7 +157,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const closeAddressForm = document.getElementById('closeAddressForm');
   const useNewAddressFlag = document.getElementById('useNewAddressFlag');
   const addressRadios = document.querySelectorAll('.address-radio');
-  const savedAddressId = document.querySelector('input[name="savedAddressId"]');
 
   // Click "Select New Address" button
   if (newAddressBtn) {
@@ -165,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
       e.preventDefault();
       newAddressForm.style.display = 'block';
       useNewAddressFlag.value = 'true';
-      // Clear saved address selection
+      // Clear saved address selection and savedAddressId value
       addressRadios.forEach(r => r.checked = false);
       // Mark form inputs as required
       newAddressForm.querySelectorAll('input[name]:not([type="checkbox"]), textarea').forEach(input => {
@@ -196,17 +195,15 @@ document.addEventListener('DOMContentLoaded', function() {
   // When clicking saved address radio, hide new address form
   addressRadios.forEach(r => {
     r.addEventListener('change', function() {
-      if (this.value !== 'new') {
-        newAddressForm.style.display = 'none';
-        useNewAddressFlag.value = 'false';
-        // Clear form inputs
-        newAddressForm.querySelectorAll('input[name]:not([type="checkbox"]), textarea').forEach(input => {
-          if (['recipientName', 'addressLine', 'city', 'district', 'phone'].includes(input.name)) {
-            input.value = '';
-            input.required = false;
-          }
-        });
-      }
+      newAddressForm.style.display = 'none';
+      useNewAddressFlag.value = 'false';
+      // Clear form inputs
+      newAddressForm.querySelectorAll('input[name]:not([type="checkbox"]), textarea').forEach(input => {
+        if (['recipientName', 'addressLine', 'city', 'district', 'phone'].includes(input.name)) {
+          input.value = '';
+          input.required = false;
+        }
+      });
     });
   });
 
