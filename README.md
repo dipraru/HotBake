@@ -14,7 +14,6 @@
 - [CI/CD Explanation](#cicd-explanation)
 - [Deployment on Render](#deployment-on-render)
 - [Default Admin Credentials](#default-admin-credentials)
-- [Team & Commit Division](#team--commit-division)
 
 ---
 
@@ -253,7 +252,7 @@ seller_profiles ──1:M──► products
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/hotbake.git
+git clone https://github.com/dipraru/hotbake.git
 cd hotbake
 
 # 2. (Optional) Create a .env file from the template
@@ -375,34 +374,6 @@ Password: Admin@1234
 
 ---
 
-## Team & Commit Division
-
-### Student A — Backend Core + Security + Seller Flow
-```
-feat: setup Spring Security with BCrypt and role-based access
-feat: implement User, Role, SellerProfile entities and repositories
-feat: implement ProductService and SellerController CRUD
-feat: implement FileStorageService for image upload (bytes in DB)
-feat: add Dockerization with Dockerfile and docker-compose.yml
-test: write unit tests for ProductService (5 tests)
-test: write unit tests for UserService (5 tests)
-docs: update README with architecture and ER diagram
-```
-
-### Student B — Buyer Flow + Admin + CI/CD
-```
-feat: implement Order, OrderItem, DeliveryAddress entities
-feat: implement OrderService and BuyerController
-feat: implement AdminController and admin dashboard UI
-feat: implement Review and Question system
-feat: session-based cart and checkout flow
-ci:   setup GitHub Actions workflow for CI/CD
-test: write unit tests for OrderService (5 tests)
-test: write unit tests for ReviewService (2 tests)
-test: write integration tests (Auth, Product, Admin controllers)
-docs: add deployment instructions and Render setup to README
-```
-
 ### Git Workflow
 ```
 main (protected)  ← only via PR from develop
@@ -424,8 +395,3 @@ feature/*         ← individual features, PRed into develop
 | `ProductControllerIntegrationTest` | Integration | 3 |
 | `AdminControllerIntegrationTest` | Integration | 3 |
 | **Total** | | **26** |
-
----
-
-## License
-Academic project — Software Engineering Lab, 2025.
